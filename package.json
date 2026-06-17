@@ -1,0 +1,55 @@
+{
+  "name": "VulaLAN",
+  "productName": "VulaLAN",
+  "version": "1.0.56",
+  "description": "VulaLAN (Edition)",
+  "author": "Monsterama854",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "npm version patch --no-git-tag-version && electron-builder --x64"
+  },
+  "build": {
+    "appId": "com.vulalan.app",
+    "productName": "VulaLAN",
+    "asar": true,
+    "files": [
+      "!**/*",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "public/**/*",
+      "libs/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "include": "build/installer.nsh"
+    }
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/share": "^8.0.1",
+    "express": "^5.2.1",
+    "peer": "^1.0.2",
+    "ws": "^8.21.0"
+  },
+  "overrides": {
+    "yauzl": "^3.3.1"
+  },
+  "devDependencies": {
+    "electron": "^42.3.3",
+    "electron-builder": "^26.15.3"
+  }
+}

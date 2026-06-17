@@ -1,0 +1,16 @@
+# Abhängigkeiten
+node_modules/
+
+# Fertige Builds & Installer
+dist/
+out/
+release/
+
+# Umgebungsvariablen & Logs
+.env
+*.log
+npm-debug.log*
+
+# OS-spezifischer Müll
+.DS_Store
+Thumbs.db

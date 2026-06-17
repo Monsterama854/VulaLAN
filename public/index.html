@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+    <html lang="de">
+    <head>
+
+        
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>VulaLAN (VoIP App & End-to-End encrypted)</title>
+        
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script>eruda.init();</script>
+
+        <link rel="icon" type="image/png" href="icon.png">
+        <link rel="stylesheet" href="style.css">
+        
+
+        
+    </head>
+    <body>
+
+        <div id="mobile-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4999;" onclick="closeMobileSidebars()"></div>
+
+        <div id="launcher-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #17051a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white;">
+            
+        
+
+    <h1 style="font-size: 32px; margin-bottom: 10px;">💬 VulaLAN <span style="color:#782585; font-size:16px; vertical-align:middle;" data-i18n="app_mega_edition">MEGA-EDITION</span></h1>
+    <p style="color: #d8b4e2; margin-top: 10px; margin-bottom: 30px; font-size: 16px;" data-i18n="start_choose_mode">Wähle deinen Netzwerk-Modus</p>
+
+    <div class="launcher-split-layout" style="display: flex; flex-direction: row; gap: 40px; justify-content: center; width: 100%; max-width: 850px; padding: 0 20px; box-sizing: border-box; align-items: stretch;">
+
+        
+
+        <div style="display: flex; flex-direction: column; flex: 1; max-width: 400px; width: 100%; height: 100%; gap: 15px;">
+            
+            <button onclick="startClientMode()" style="padding: 15px; flex: 1; background: #9333ea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(147, 51, 234, 0.2); transition: 0.2s;">
+                <span data-i18n="btn_connect_server">🌐 Mit Server verbinden</span>
+                <span style="font-size: 12px; opacity: 0.8; font-weight: normal;" data-i18n="start_desc_client">(Firma / Web)</span>
+            </button>
+            
+            <button onclick="startHostMode()" style="padding: 15px; flex: 1; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); transition: 0.2s;">
+                <span data-i18n="btn_host_server">🏠 Eigenen Server hosten</span> 
+                <span style="font-size: 12px; color: #a7f3d0; font-weight: normal;" data-i18n="start_desc_host">(Zuhause)</span>
+            </button>
+            
+            <button onclick="startP2PMode()" style="padding: 15px; flex: 1; background: #e11d48; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(225, 29, 72, 0.2); transition: 0.2s;">
+                <span data-i18n="btn_p2p">🔗 Direktverbindung</span> 
+                <span style="font-size: 12px; color: #fecdd3; font-weight: normal;" data-i18n="start_desc_p2p">(P2P LAN)</span>
+            </button>
+
+            <div id="server-ip-dialog" style="display: none; flex-direction: column; gap: 10px; width: 100%; margin-top: 5px; background: #290e30; padding: 15px; border-radius: 12px; border: 1px solid #4a154b; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                <p style="color: #fdf4ff; font-size: 14px; font-weight: bold; margin: 0;" data-i18n="server_ip_prompt">🖥️ Server-IP oder Domain eingeben:</p>
+                
+                <input type="text" id="client-target-ip" placeholder="192.168.178.x" data-i18n-placeholder="placeholder_server_ip" style="padding: 10px; border-radius: 8px; border: 1px solid #4a154b; background: #3d1547; color: white; outline: none;">
+                <input type="text" id="client-server-pin" placeholder="Server-PIN" title="Can be optional, depending on server's settings" style="padding: 10px; border-radius: 8px; border: 1px solid #4a154b; background: #3d1547; color: white; outline: none;" onfocus="setTimeout(() => this.scrollIntoView({behavior: 'smooth', block: 'center'}), 300)">
+
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button onclick="confirmClientStart()" style="flex: 1; padding: 10px; background: #912ea0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;" data-i18n="btn_connect">Verbinden</button>
+                    <button onclick="document.getElementById('server-ip-dialog').style.display='none'" style="padding: 10px; background: #e11d48; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;" data-i18n="btn_cancel">Abbrechen</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="display: flex; flex-direction: column; flex: 1; max-width: 400px; width: 100%; height: 100%; min-height: 200px;">
+            <div id="adapter-selection" style="display: none; flex-direction: column; height: 100%;">
+                <label style="color: #d8b4e2; font-size: 13px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="start_network_adapter">Netzwerk-Adapter (Für P2P & Host):</label>
+                
+                <div id="interface-list" class="interface-list-container"></div>
+            </div>
+        </div>
+
+    </div>
+    
+    <div style="margin-top: 25px; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 12px 20px; border-radius: 8px; border: 1px solid #4a154b; max-width: 400px; width: 100%; box-sizing: border-box;">
+        <input type="checkbox" id="launcher-autostart-cb" style="width: 18px; height: 18px; accent-color: #9530a4; cursor: pointer;">
+        <label for="launcher-autostart-cb" style="color: #d8b4e2; font-size: 13px; cursor: pointer; font-weight: bold;" data-i18n="start_auto_login">Immer in diesem Modus starten</label>
+    </div>
+    
+    <div style="margin-top: 30px; width: 100%; text-align: center; padding-bottom: 20px;">
+        <a href="#" onclick="document.getElementById('privacy-modal').style.display='flex'" style="color: #00a8fc; font-size: 12px; text-decoration: none; transition: 0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" data-i18n="btn_privacy_policy">📄 Datenschutzerklärung anzeigen</a>
+    </div>
+
+</div> 
+
+
+
+    </div>
+    </div>
+        
+
+        <div id="context-menu"></div>
+
+        <div id="image-modal" class="modal" onclick="if(event.target === this) this.style.display='none'">
+            <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
+                <img id="lightbox-img" style="max-width: 100%; max-height: 80vh; border-radius: 8px;">
+                <a id="lightbox-download" href="#" style="background: #421867; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; display: inline-block;" data-i18n="btn_save_image">⬇️ Bild speichern</a>
+            </div>
+        </div>
+
+        <div id="name-modal" class="modal">
+            <div class="modal-content" style="width: 320px;">
+                <span class="close-modal" onclick="document.getElementById('name-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_edit_profile">✏️ Profil bearbeiten</h3>
+                <input type="text" id="new-name-input" placeholder="Dein Benutzername" data-i18n-placeholder="placeholder_username" style="margin-bottom: 10px; width: 100%;">
+                <textarea id="new-bio-input" placeholder="Über mich (Bio)..." data-i18n-placeholder="placeholder_bio" style="width: 100%; height: 250px; margin-bottom: 15px; background: #131419; color: white; border: none; border-radius: 5px; padding: 10px; resize: none; font-family: inherit;"></textarea>
+                <button id="save-name-btn" style="background: #3ba55d; width: 100%;" data-i18n="btn_save_profile">Profil Speichern</button>
+            </div>
+        </div>
+
+        <div id="user-profile-modal" class="modal">
+            <div class="modal-content" style="width: 300px; text-align: center; position: relative;">
+                <span class="close-modal" onclick="document.getElementById('user-profile-modal').style.display='none'" style="position: absolute; right: 15px; top: 10px;">&times;</span>
+                <img id="profile-modal-avatar" src="" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #1f2029; margin-top: -50px; background: #131419;">
+
+                <h2 id="profile-modal-name" style="color: white; margin: 10px 0 0 0; font-size: 20px;" data-i18n="profile_name">Name</h2>
+                
+                <div style="color: #72767d; font-size: 11px; margin-top: 2px; margin-bottom: 5px;"><span data-i18n="profile_id">ID:</span> <span id="profile-modal-id">...</span></div>
+                
+                <div onclick="copyProfileIp()" style="background: #131419; border-radius: 4px; padding: 4px 10px; margin: 0 auto 15px auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #1f2029; transition: 0.2s;" onmouseover="this.style.borderColor='var(--vula-primary)'" onmouseout="this.style.borderColor='#1f2029'" title="IP kopieren" data-i18n-title="title_copy_ip">
+                    <span style="color: #b9bbbe; font-size: 12px; font-family: monospace;"><span data-i18n="profile_ip">IP:</span> <span id="profile-modal-ip">...</span></span>
+                    <span style="font-size: 12px;">📋</span>
+                </div>
+
+                <div style="background: #111214; padding: 12px; border-radius: 8px; text-align: left;">
+                    <h3 style="font-size: 11px; margin-bottom: 5px;" data-i18n="profile_about_me">ÜBER MICH</h3>
+                    <div id="profile-modal-bio" style="color: #dcddde; font-size: 14px; line-height: 1.4; min-height: 40px; word-wrap: break-word;"></div>
+                </div>
+                <button id="profile-modal-msg-btn" style="width: 100%; margin-top: 15px; background: var(--vula-primary);" data-i18n="btn_send_dm">Direktnachricht senden</button>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="modal-content" style="width: 450px;">
+                <span class="close-modal" onclick="document.getElementById('settings-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 20px;">⚙️ <span data-i18n="settings_title">Audio-Einstellungen</span></h3>
+                <label style="color:#bcb9be; font-size:12px; display:block; margin-bottom:5px;" data-i18n="settings_language">Sprache / Language:</label>
+                <select id="lang-select" onchange="changeLanguage(this.value)" style="width:100%; background:#2f3136; color:#fff; border:1px solid #202225; padding:8px; border-radius:4px; margin-bottom:20px; font-family:inherit; cursor:pointer;">
+                    <option value="de" data-i18n="lang_de">Deutsch 🇩🇪</option>
+                    <option value="en" data-i18n="lang_en">English 🇺🇲 🇬🇧</option>
+                </select>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label style="color:#b9bbbe; font-size:12px; display:block; margin-bottom:5px;" data-i18n="settings_mic">Mikrofon:</label>
+                        <select id="mic-select" style="width: 100%;"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color:#b9bbbe; font-size:12px; display:block; margin-bottom:5px;" data-i18n="settings_speaker">Lautsprecher:</label>
+                        <select id="speaker-select" style="width: 100%;"></select>
+                    </div>
+                </div>
+
+                <label style="color:#b9bbbe; font-size:12px; display:block; margin-bottom:5px;" data-i18n="settings_mic_vol">Mikrofon-Pegel (Eingabe):</label>
+                <input type="range" id="mic-volume-slider" min="0" max="2.5" step="0.05" value="1" style="width: 100%; margin-bottom: 15px; accent-color: #ed4245;">
+                
+                <label style="color:#b9bbbe; font-size:12px; display:block; margin-bottom:5px;" data-i18n="settings_vol">Lautstärke:</label>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" style="width: 100%; margin-bottom: 20px;">
+
+                <h4 style="color: white; font-size: 13px; border-bottom: 1px solid #40444b; padding-bottom: 5px; margin-bottom: 15px;" data-i18n="settings_adv">Erweiterte Sprachverarbeitung</h4>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 15px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_noise">Hintergrundgeräusche unterdrücken</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_noise_desc">Filtert Rauschen und Tastatur-Tippen heraus</div>
+                    </div>
+                    <input type="checkbox" id="setting-noise" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 15px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_echo">Echo unterdrücken</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_echo_desc">Verhindert, dass dein Mikrofon die Boxen aufnimmt</div>
+                    </div>
+                    <input type="checkbox" id="setting-echo" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 10px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_agc">Automatische Verstärkung</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_agc_desc">Pegelt deine Mikrofonlautstärke automatisch (AGC)</div>
+                    </div>
+                    <input type="checkbox" id="setting-agc" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <div style="margin-top: 15px; margin-bottom: 15px; padding-top: 15px; border-top: 1px solid #4f545c;">
+    <label style="color:white; font-size:14px; font-weight:bold;">🎨 Akzentfarbe (Custom Theme)</label>
+    <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+        <input type="color" id="theme-color-picker" style="cursor:pointer; width:45px; height:40px; border:none; background:transparent; padding:0;">
+        <button id="reset-color-btn" style="background:#4f545c; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; transition: 0.2s;" onmouseover="this.style.background='#72767d'" onmouseout="this.style.background='#4f545c'">Standard (Lila) wiederherstellen</button>
+    </div>
+</div>
+
+                <h4 style="color: white; font-size: 13px; border-bottom: 1px solid #40444b; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px;" data-i18n="settings_net">Netzwerk & Sicherheit</h4>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 10px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_stun">STUN-Server für Internet-Calls erlauben</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_stun_desc">Muss für VPN/Tunnel an sein. Im reinen LAN ausschalten für 100% Offline.</div>
+                    </div>
+                    <input type="checkbox" id="setting-stun" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 10px; cursor: pointer; margin-top: 15px;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_autostart">Auto-Start aktivieren</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_autostart_desc">Überspringt das Startmenü und lädt sofort den letzten Modus.</div>
+                    </div>
+                    <input type="checkbox" id="setting-autostart" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 10px; cursor: pointer; margin-top: 15px;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_pin_force">Server-PIN erzwingen (Host)</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_pin_desc">Ausschalten, um im Intranet ohne Passwort beizutreten.</div>
+                    </div>
+                    <input type="checkbox" id="setting-require-pin" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <label style="display: flex; justify-content: space-between; align-items: center; color: #dcddde; font-size: 14px; margin-bottom: 10px; cursor: pointer; margin-top: 15px;">
+                    <div>
+                        <div style="font-weight: bold;" data-i18n="settings_lazy_load">Nachrichten schrittweise laden (50er Batches)</div>
+                        <div style="font-size: 11px; color: #72767d;" data-i18n="settings_lazy_desc">Verhindert winzige Scrollbalken bei langen Chatverläufen</div>
+                    </div>
+                    <input type="checkbox" id="setting-lazy-load" style="width: 18px; height: 18px; accent-color: var(--vula-primary);">
+                </label>
+
+                <div class="host-setting-item" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; color: #dcddde; font-size: 14px;">
+                        <input type="checkbox" id="autoSaveLargeToggle" style="margin-right: 8px;">
+                        <span data-i18n="settings_auto_save">⚠️ Große Dateien (>15MB) ohne Popup sofort auf dem Server speichern</span>
+                    </label>
+                </div>
+
+                <div class="host-setting-item" style="margin-top: 15px;">
+                    </div>
+
+                <div style="margin-top: 25px; text-align: center; border-top: 1px solid #40444b; padding-top: 15px;">
+                    <a href="#" onclick="document.getElementById('privacy-modal').style.display='flex'" style="color: #00a8fc; font-size: 12px; text-decoration: none; transition: 0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" data-i18n="btn_privacy_policy">📄 Datenschutzerklärung anzeigen</a>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="pinned-modal" class="modal">
+            <div class="modal-content" style="width: 450px; max-height: 80vh; display: flex; flex-direction: column;">
+                <span class="close-modal" onclick="document.getElementById('pinned-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_pinned">📌 Angepinnte Nachrichten</h3>
+                <div id="pinned-messages-list" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+            </div>
+        </div>
+
+        <div id="search-modal" class="modal">
+            <div class="modal-content" style="width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+                <span class="close-modal" onclick="document.getElementById('search-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_search_results">🔍 Suchergebnisse</h3>
+                <div id="search-results-list" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+            </div>
+        </div>
+
+        <div id="wb-save-modal" class="modal" style="z-index: 4000;">
+            <div class="modal-content" style="width: 320px;">
+                <span class="close-modal" onclick="document.getElementById('wb-save-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="save_whiteboard">💾 Whiteboard speichern</h3>
+                <p style="color: #b9bbbe; font-size: 12px; margin-bottom: 10px;" data-i18n="wb_save_prompt">Unter welchem Namen soll das Whiteboard gespeichert werden?</p>
+                <input type="text" id="wb-save-name-input" style="margin-bottom: 15px; width: 100%;" onkeypress="if(event.key === 'Enter') confirmSaveWhiteboard()">
+                <button onclick="confirmSaveWhiteboard()" style="background: #3ba55d; width: 100%;" data-i18n="btn_save">Speichern</button>
+            </div>
+        </div>
+
+        <div id="wb-text-modal" class="modal" style="z-index: 4000;">
+            <div class="modal-content" style="width: 320px;">
+                <span class="close-modal" onclick="document.getElementById('wb-text-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="Insert_text">🔤 Text einfügen</h3>
+                <input type="text" id="wb-text-input" placeholder="Dein Text..." data-i18n-placeholder="placeholder_your_text" style="margin-bottom: 15px; width: 100%;" onkeypress="if(event.key === 'Enter') confirmWbText()">
+                <button onclick="confirmWbText()" style="background: #3ba55d; width: 100%;" data-i18n="Place_on_whiteboard">Auf Whiteboard platzieren</button>
+            </div>
+        </div>
+
+        <div id="edit-msg-modal" class="modal" style="z-index: 4000;">
+            <div class="modal-content" style="width: 400px;">
+                <span class="close-modal" onclick="document.getElementById('edit-msg-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;">✏️ Nachricht bearbeiten</h3>
+                <textarea id="edit-msg-input" style="width: 100%; height: 100px; margin-bottom: 15px; background: #131419; color: white; border: none; border-radius: 5px; padding: 10px; resize: none; font-family: inherit; outline: none;"></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="confirmEditMsg()" style="flex: 1; background: #3ba55d;">Speichern</button>
+                    <button onclick="document.getElementById('edit-msg-modal').style.display='none'" style="flex: 1; background: #ed4245;">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="privacy-modal" class="modal" style="z-index: 10000;">
+            <div class="modal-content" style="width: 500px;">
+                <span class="close-modal" onclick="document.getElementById('privacy-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;">🛡️ <span data-i18n="privacy_title">Datenschutz & Transparenz</span></h3>
+
+                <div style="color: #dcddde; font-size: 13px; line-height: 1.5; overflow-y: auto; max-height: 60vh; padding-right: 5px;">
+                    <p><b data-i18n="privacy_intro_bold">VulaLAN ist nach dem Prinzip "Privacy by Design" entwickelt.</b></p>
+                    <ul style="padding-left: 20px; margin-bottom: 15px;">
+                        <li style="margin-bottom: 8px;"><b data-i18n="privacy_p1_title">Keine zentralen Server:</b> <span data-i18n="privacy_p1_desc">Diese App sendet keine persönlichen Daten, Chatverläufe oder IP-Adressen an den Entwickler oder an Drittanbieter.</span></li>
+                        <li style="margin-bottom: 8px;"><b data-i18n="privacy_p2_title">Lokale Speicherung:</b> <span data-i18n="privacy_p2_desc">Alle deine Nachrichten, Bilder und Kontakte werden ausschließlich lokal auf deinem eigenen Gerät (IndexedDB) gespeichert.</span></li>
+                        <li style="margin-bottom: 8px;"><b data-i18n="privacy_p3_title">Ende-zu-Ende Verschlüsselung (E2EE):</b> <span data-i18n="privacy_p3_desc">Direktnachrichten und P2P-Dateiübertragungen werden lokal verschlüsselt. Niemand – nicht einmal der Host des Netzwerks – kann diese Daten mitlesen.</span></li>
+                        <li style="margin-bottom: 8px;"><b data-i18n="privacy_p4_title">Ausnahme "Global Chat":</b> <span data-i18n="privacy_p4_desc">Nachrichten, die in den öffentlichen "Global Chat" geschrieben werden, werden unverschlüsselt auf dem lokalen Host-Server des Netzwerks gespeichert, um neuen Nutzern den Chatverlauf zur Verfügung zu stellen.</span></li>
+                        <li style="margin-bottom: 8px;"><b data-i18n="privacy_p5_title">IP-Adressen:</b> <span data-i18n="privacy_p5_desc">Um direkte Verbindungen (WebRTC / P2P) aufzubauen, werden IP-Adressen innerhalb des Netzwerks ausgetauscht.</span></li>
+                    </ul>
+                </div>
+                <button onclick="document.getElementById('privacy-modal').style.display='none'" style="width: 100%; margin-top: 15px; background: #4f545c;" data-i18n="btn_close">Schließen</button>
+            </div>
+        </div>
+
+        <div id="vula-alert-modal" class="modal" style="z-index: 9999;">
+            <div class="modal-content" style="width: 350px; text-align: center;">
+                <h3 style="margin-bottom: 10px; color: #ed4245;" data-i18n="title_alert">⚠️ Hinweis</h3>
+                <p id="vula-alert-text" style="color: #dcddde; font-size: 14px; margin-bottom: 20px; word-wrap: break-word;"></p>
+                <button onclick="document.getElementById('vula-alert-modal').style.display='none'; document.getElementById('chat-input').focus();" style="background: #40444b; width: 100%; color: white;" data-i18n="btn_ok">OK</button>
+            </div>
+        </div>
+        
+        <div id="group-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="document.getElementById('group-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_create_group">👥 Neue Gruppe erstellen</h3>
+                <input type="text" id="group-name-input" placeholder="Gruppenname (z.B. Zocker-Lounge)" data-i18n-placeholder="placeholder_group_name" style="margin-bottom: 15px; width: 100%;">
+                <p style="color: #b9bbbe; font-size: 12px; margin-bottom: 5px;" data-i18n="group_select_members">Teilnehmer auswählen:</p>
+                <div id="group-user-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; background: #131419; padding: 10px; border-radius: 5px;"></div>
+                <button onclick="createGroup()" style="width: 100%;" data-i18n="btn_create_group">Gruppe erstellen</button>
+            </div>
+        </div>
+
+        <div id="forward-modal" class="modal" style="z-index: 4000;">
+            <div class="modal-content" style="width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
+                <span class="close-modal" onclick="document.getElementById('forward-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_forward">↪️ Nachricht weiterleiten</h3>
+                <div id="forward-list" style="overflow-y: auto; flex-grow: 1; padding-right: 5px; display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
+        </div>
+
+
+        <div id="group-edit-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="document.getElementById('group-edit-modal').style.display='none'">&times;</span>
+                <h3 style="margin-bottom: 15px;" data-i18n="title_edit_group">⚙️ Gruppe bearbeiten</h3>
+                <p style="color: #b9bbbe; font-size: 12px; margin-bottom: 5px;" data-i18n="group_edit_members">Teilnehmer hinzufügen/entfernen:</p>
+                <div id="group-edit-user-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; background: #131419; padding: 10px; border-radius: 5px;"></div>
+                <button onclick="saveGroupMembers()" style="width: 100%; background: #3ba55d;" data-i18n="btn_save_changes">Änderungen speichern</button>
+            </div>
+        </div>
+
+        <div id="whiteboard-modal">
+            
+            <div id="wb-clear-request" style="display:none; position:absolute; top:80px; left:50%; transform:translateX(-50%); background:#ed4245; color:white; padding:15px; border-radius:8px; z-index:4000; box-shadow:0 4px 10px rgba(0,0,0,0.5); align-items:center; gap:15px;">
+                <span id="wb-clear-text" style="font-weight: bold;" data-i18n="wb_req_clear">Jemand möchte leeren...</span>
+                <button onclick="approveClearWb()" style="background:white; color:#ed4245; padding: 5px 10px;" data-i18n="btn_approve">Zustimmen</button>
+                <button onclick="document.getElementById('wb-clear-request').style.display='none'" style="background:#131419; padding: 5px 10px;" data-i18n="btn_decline">Ablehnen</button>
+            </div>
+
+            <div id="wb-load-request" style="display:none; position:absolute; top:140px; left:50%; transform:translateX(-50%); background:#f1c40f; color:#000; padding:15px; border-radius:8px; z-index:4000; box-shadow:0 4px 10px rgba(0,0,0,0.5); align-items:center; gap:15px;">
+                <span id="wb-load-text" style="font-weight: bold;" data-i18n="wb_req_load">Jemand möchte laden...</span>
+                <button onclick="approveLoadWb()" style="background:#000; color:#f1c40f; padding: 5px 10px;" data-i18n="btn_approve">Zustimmen</button>
+                <button onclick="document.getElementById('wb-load-request').style.display='none'" style="background:#131419; color:white; padding: 5px 10px;" data-i18n="btn_decline">Ablehnen</button>
+            </div>
+
+            <div class="wb-toolbar" style="flex-wrap: wrap; justify-content: center;">
+                <input type="color" id="wb-color" value="#000000" style="padding:0; width:40px; height:40px; border:none;" title="Farbe" data-i18n-title="title_color">
+                <input type="range" id="wb-size" min="1" max="40" value="3" title="Größe" data-i18n-title="title_size">
+                
+                <div style="border-right: 1px solid #40444b; padding-right: 15px; margin-right: 5px; display: flex; gap: 5px;">
+                    <button id="wb-tool-draw" style="background: #3ba55d; padding: 8px 15px;" onclick="setWbTool('draw')" data-i18n="wb_tool_pen">✏️ Stift</button>
+                    <button id="wb-tool-text" style="background: #4f545c; padding: 8px 15px;" onclick="setWbTool('text')" data-i18n="wb_tool_text">🔤 Text</button>
+                </div>
+
+                <div style="border-right: 1px solid #40444b; padding-right: 15px; margin-right: 5px; display: flex; gap: 5px;">
+                    <button onclick="saveWhiteboardLocally()" style="background: #f1c40f; color: #000; padding: 8px 15px;" title="Lokal auf SSD speichern" data-i18n-title="title_save_local" data-i18n="btn_save_local">💾 Speichern</button>
+                    <button onclick="openSavedWhiteboards()" style="background: #9b59b6; padding: 8px 15px;" title="Gespeicherte laden" data-i18n-title="title_load_saved" data-i18n="btn_archive">📁 Archiv</button>
+                </div>
+
+                <button onclick="requestClearWhiteboard()" style="background: #ed4245; padding: 8px 15px;" data-i18n="btn_clear">🗑️ Leeren</button>
+                <button onclick="closeWhiteboard()" style="background: #4f545c; padding: 8px 15px;" data-i18n="btn_close">❌ Schließen</button>
+            </div>
+            <canvas id="wb-canvas" width="1000" height="600" style="background: white; border-radius: 8px; cursor: crosshair; touch-action: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></canvas>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header" style="text-align: center; padding: 20px 15px;" class="nerd-panel">
+                <h3 style="color: white; font-size: 18px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <img src="icon.png" style="width: 28px; height: 28px; object-fit: contain;"> VulaLAN
+                </h3>
+                <p style="color: #3ba55d; font-size: 12px; font-weight: bold; margin-top: 5px;" data-i18n="secure_web_edition">Secure Web Edition</p>
+                
+                <div style="margin-top: 15px; background: #111214; border: 1px solid #1f2029; border-radius: 6px; padding: 10px; text-align: left; font-family: 'Consolas', monospace; font-size: 10px; line-height: 1.4; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
+                    <div style="color: #8e9297; font-weight: bold; margin-bottom: 6px; font-size: 9px; letter-spacing: 1px;">📡 LIVE ROUTING</div>
+                    
+                    <div style="display: flex; justify-content: space-between; gap: 5px;">
+                        <span style="color: #72767d;">MODE:</span>
+                        <span id="route-mode" style="color: #ed4245; text-align: right;">NULL</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; gap: 5px; margin-top: 4px;">
+                        <span style="color: #72767d;">TUNNEL:</span>
+                        <span id="route-vpn" style="color: #ed4245; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">NULL</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; gap: 5px; margin-top: 4px;">
+                        <span style="color: #72767d;">STUN:</span>
+                        <span id="route-stun" style="color: #ed4245; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">NULL</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="p2p-ui-container" style="display: none; padding: 10px 20px; background: #1f2029; border-bottom: 1px solid #131419;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <p style="color: #b9bbbe; font-size: 10px; font-weight: bold; margin: 0;" data-i18n="p2p_connection">P2P VERBINDUNG</p>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="scanSubnetForP2P()" style="background: transparent; color: #72767d; border: 1px solid #40444b; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 2px 5px; transition: 0.2s;" onmouseover="this.style.color='white'; this.style.borderColor='#3ba55d';" onmouseout="this.style.color='#72767d'; this.style.borderColor='#40444b';" title="Lokales Netzwerk nach Partnern durchsuchen" data-i18n-title="lan_partner_search" data-i18n="btn_scan">📡 Scan</button>
+                        <button onclick="fixFirewall()" style="background: transparent; color: #72767d; border: 1px solid #40444b; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 2px 5px; transition: 0.2s;" onmouseover="this.style.color='white'; this.style.borderColor='var(--vula-primary)';" onmouseout="this.style.color='#72767d'; this.style.borderColor='#40444b';" title="Behebt Probleme bei eingehenden Verbindungen" data-i18n-title="title_fix_firewall" data-i18n="btn_firewall_fix">🛡️ Firewall Fix</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="p2p-target-ip" placeholder="192.168.x.x" data-i18n-placeholder="placeholder_ip" style="flex: 1; padding: 5px; font-size: 12px; border-radius: 3px; border: none; background: #131419; color: white;">
+                    <button onclick="initiateP2PConnection()" style="background: var(--vula-primary); color: white; border: none; border-radius: 3px; cursor: pointer; padding: 0 10px;">🔗</button>
+                </div>
+
+            </div>
+
+            <div id="host-ui-container" style="display: none; padding: 10px 20px; background: #1f2029; border-bottom: 1px solid #131419;" >
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <p style="color: #b9bbbe; font-size: 10px; font-weight: bold; margin: 0;" data-i18n="local_server_running">LOKALER SERVER LÄUFT</p>
+                    <button onclick="fixFirewall()" style="background: transparent; color: #72767d; border: 1px solid #40444b; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 2px 5px; transition: 0.2s;" onmouseover="this.style.color='white'; this.style.borderColor='var(--vula-primary)';" onmouseout="this.style.color='#72767d'; this.style.borderColor='#40444b';" title="Behebt Probleme bei eingehenden Verbindungen" data-i18n-title="title_fix_firewall" data-i18n="btn_firewall_fix">🛡️ Firewall Fix</button>
+                </div>
+
+
+                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                    
+                    <input type="text" id="host-display-ip" readonly title="Gib diese IP an deine Freunde weiter!" data-i18n-title="title_share_ip" style="flex: 2; min-width: 120px; padding: 5px; font-size: 12px; border-radius: 3px; border: none; background: #131419; color: #3ba55d; font-weight: bold; text-align: center; cursor: copy;" onclick="this.select(); document.execCommand('copy'); alert('IP kopiert!');">
+                    <input type="text" id="host-display-pin" readonly title="Server-PIN" style="flex: 1; min-width: 60px; padding: 5px; font-size: 12px; border-radius: 3px; border: none; background: #131419; color: #ed4245; font-weight: bold; text-align: center; cursor: copy;" onclick="this.select(); document.execCommand('copy'); alert('PIN kopiert!');">
+                    
+                    <div style="display: flex; gap: 5px; margin-top: 10px;">
+                        <button onclick="openHostFolder()" style="flex: 1; background: #4f545c; padding: 5px; font-size: 11px;" data-i18n="btn_open_folder">📂 Ordner öffnen</button>
+                        <button onclick="clearHostFolder()" style="flex: 1; background: #ed4245; padding: 5px; font-size: 11px;" data-i18n="btn_clear_folder">🗑️ Dateien löschen</button>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <button onclick="startTimbuktuTunnel()" style="width: 100%; background: #e67e22; padding: 6px; font-size: 12px; font-weight: bold; color: white;" data-i18n="btn_tunnel">🌍 Ins Internet freigeben (Tunnel)</button>
+                        <input type="text" id="host-tunnel-link" readonly title="Diesen Link deinem Kumpel schicken!" style="display: none; width: 100%; margin-top: 5px; padding: 8px; font-size: 12px; border-radius: 3px; border: none; background: #131419; color: #e67e22; font-weight: bold; text-align: center; cursor: copy;" onclick="this.select(); document.execCommand('copy'); alert('Tunnel-Link kopiert!');">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="incoming-call-box">
+                <h3 style="color: white; margin: 0 0 10px 0;" data-i18n="incoming_call">📞 Eingehender Anruf!</h3>
+                <p id="caller-name-text" style="color: white; font-weight: bold; margin: 0 0 10px 0;" data-i18n="call_from">Von: ...</p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="accept-btn" style="background: #3ba55d; flex: 1;" data-i18n="btn_accept">Annehmen</button>
+                    <button id="decline-btn" style="background: #131419; flex: 1;" data-i18n="btn_decline">Ablehnen</button>
+                </div>
+            </div>
+
+            <div class="contact-list-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <h3 style="margin: 0;" data-i18n="tab_groups">Gruppenchats</h3>
+                    <button class="icon-btn" onclick="openGroupModal()" title="Neue Gruppe erstellen" data-i18n-title="title_new_group" style="padding: 2px 6px; font-size: 12px; background: #131419;">➕</button>
+                </div>
+                <div id="group-list" style="margin-bottom: 20px;"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 15px;">
+                    <h3 style="margin: 0;" data-i18n="tab_dms">Direktnachrichten</h3>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="icon-btn" onclick="restoreChats()" title="Alte Chats aus der Datenbank wiederherstellen" data-i18n-title="title_restore_chats" style="padding: 2px 6px; font-size: 12px; background: #131419;">📂</button>
+                        <button class="icon-btn" onclick="cleanupContacts()" title="Offline-Kontakte bereinigen" data-i18n-title="title_cleanup_contacts" style="padding: 2px 6px; font-size: 12px; background: #131419;">🧹</button>
+                    </div>
+                </div>
+                <div id="contact-list"></div>
+            </div>
+
+            <div class="user-panel" style="align-items: flex-start; gap: 12px; justify-content: flex-start;">
+                
+                <div style="display: flex; flex-direction: column; align-items: center; width: 45px; flex-shrink: 0;">
+                    <img id="my-avatar" class="avatar" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" title="Bild ändern" data-i18n-title="title_change_avatar" onclick="document.getElementById('avatar-input').click()" style="margin: 0; width: 36px; height: 36px;">
+                    <input type="file" id="avatar-input" style="display:none" accept="image/*">
+                    <div class="user-panel-id" style="font-size: 9px; margin-top: 5px; text-align: center; color: #b9bbbe; line-height: 1;"><span id="my-id">...</span></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; padding-top: 2px;">
+                    <div class="user-panel-name" id="display-my-name" title="Name ändern" data-i18n-title="title_change_name" style="margin-bottom: 6px; font-size: 15px;">Lädt...</div>
+                    
+                    <div class="action-btns" style="display: flex; gap: 6px; justify-content: flex-start;">
+                        <button class="icon-btn" id="mute-btn" title="Mikrofon stummschalten" data-i18n-title="title_mute" style="padding: 4px 8px; font-size: 14px;">🎤</button>
+                        <button class="icon-btn" id="deafen-btn" title="Audio stummschalten" data-i18n-title="title_deaf" style="padding: 4px 8px; font-size: 14px;">🎧</button>
+                        <button class="icon-btn" id="theme-btn" title="Design wechseln" data-i18n-title="title_theme" style="padding: 4px 8px; font-size: 14px;">☀️</button>
+                        <button class="icon-btn" onclick="openSettings()" title="Einstellungen" data-i18n-title="title_settings" style="padding: 4px 8px; font-size: 14px;">⚙️</button>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+
+        <div class="resizer-x" id="resizer-left"></div>
+
+        <div class="main">
+            <div id="active-call-banner" style="display: none; background: rgba(88, 101, 242, 0.1); border-bottom: 1px solid var(--vula-primary); padding: 10px 20px; align-items: center; justify-content: space-between;">
+                <div style="display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 10px; height: 10px; background: #3ba55d; border-radius: 50%; box-shadow: 0 0 5px #3ba55d; animation: pulseCall 2s infinite;"></div>
+                        <span style="color: white; font-size: 14px; font-weight: bold;">Im Gespräch mit <span id="active-call-name">...</span></span>
+                    </div>
+                    <div id="call-avatar-list" style="display: flex; margin-top: 8px;"></div>
+                </div>
+                <button id="banner-hangup-btn" style="background: #ed4245; padding: 8px 15px; border-radius: 4px; color: white; border: none; font-size: 12px; font-weight: bold; cursor: pointer;">Auflegen</button>
+            </div>
+            <style>@keyframes pulseCall { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }</style>
+
+            
+            <div class="chat-header-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="hamburger-btn" onclick="toggleMobileSidebar('left')" style="display: none; background: transparent; border: none; color: var(--vula-primary); font-size: 28px; padding: 0; margin-right: 8px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">☰</button>
+                    
+                    <h3 style="margin:0; color:white; font-size: 16px;">@ <span id="chat-header-name" data-i18n="chat_nobody">Niemand</span></h3>
+                    <span id="e2e-badge" class="e2e-badge" title="Dieser Chat ist Ende-zu-Ende verschlüsselt" data-i18n="badge_e2e" data-i18n-title="title_e2e">🔒 E2EE Aktiv</span>
+                    <button id="sync-btn" style="background: #131419; color: #b9bbbe; padding: 5px 10px; display: none; font-size: 12px; border-radius: 4px; cursor: pointer;" title="Nachrichtenverlauf abgleichen" data-i18n-title="title_sync" data-i18n="btn_sync">🔄 Sync</button>
+                    <input type="hidden" id="target-ip">
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="mobile-members-btn" style="display: none; background: #2b2d31; color: white; padding: 8px 15px;" onclick="toggleMobileSidebar('right')">👥</button>
+
+                    <div id="search-container" style="display: none; align-items: center; background: #131419; border-radius: 4px; padding: 0 10px;">
+                        <span style="font-size: 14px; cursor: pointer;" onclick="executeSearch()" title="Suchen" data-i18n-title="title_search">🔍</span>
+                        <input type="text" id="chat-search-input" placeholder="Suchen..." data-i18n-placeholder="placeholder_search" style="background: transparent; border: none; color: white; padding: 8px 5px; width: 130px; font-size: 13px;" onkeypress="if(event.key === 'Enter') executeSearch()">
+                    </div>
+
+                    <button id="group-mgr-btn" style="background: #4f545c; padding: 8px 15px; display: none;" onclick="openGroupEditModal()" data-i18n="btn_members">👥 Mitglieder</button>
+                    <button id="pin-view-btn" style="background: #6f7480; color: white; padding: 8px 15px; display: none;" onclick="openPinnedMessages()" title="Angepinnte Nachrichten" data-i18n-title="title_pins" data-i18n="btn_pins">📌 Pins</button>
+
+                    <button id="wb-btn" style="background: #8b2b5e; padding: 8px 15px;" data-i18n="btn_wb">🖌️ Whiteboard</button>
+                    <button id="call-btn" style="background: #3ba55d; padding: 8px 15px;" data-i18n="btn_voice">📞 Voice</button>
+                    <button id="screen-btn" style="background: var(--vula-primary); padding: 8px 15px; display: none;" data-i18n="btn_screen">🖥️ Screen Share</button>
+
+                    <button id="hangup-btn" style="background: #ed4245; padding: 8px 15px; display: none;" data-i18n="btn_hangup">Auflegen</button>
+                </div>
+            </div>
+
+            <div id="call-grid-container" style="display: none; background: #000; padding: 10px; border-bottom: 1px solid #131419; gap: 10px; flex-wrap: wrap; justify-content: center; max-height: 50vh; overflow-y: auto; position: relative;">
+                <div class="video-controls" style="position: absolute; bottom: 10px; z-index: 100;">
+                    <button class="vid-btn" id="vid-mute-btn" title="Alle stummschalten" data-i18n-title="title_mute_all">🔊</button>
+                    <input type="range" id="vid-vol-slider" min="0" max="1" step="0.05" value="1" style="width: 80px; height: 4px;">
+                    
+                    <button class="vid-btn" id="vid-pip-btn" title="Bild-in-Bild" style="margin-left: 10px;">🔲</button>
+                    
+                    <button class="vid-btn" id="vid-fullscreen-btn" title="Vollbild" data-i18n-title="title_fullscreen" style="margin-left: 10px;">⛶</button>
+                </div>
+            </div>
+            
+            <div id="audio-container" style="display: none;"></div>
+
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                
+                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                    <div id="chat-box" style="flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; user-select: text; min-width: 0;"></div>
+                    
+                    <div id="status-indicator"></div>
+
+                    <div style="padding: 0 20px 20px 20px;">
+
+                        <div id="reply-preview-bar" style="display: none; background: #290e30; padding: 10px 15px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #4a154b; align-items: center; justify-content: space-between; border-left: 4px solid #db2777;">
+                            <div style="display: flex; flex-direction: column; overflow: hidden; white-space: nowrap; flex: 1;">
+                                <span style="font-size: 11px; color: #d946ef; font-weight: bold; margin-bottom: 2px;">Antwort an <span id="reply-preview-name">Name</span></span>
+                                <span id="reply-preview-text" style="font-size: 13px; color: #b9bbbe; text-overflow: ellipsis; overflow: hidden;">...</span>
+                            </div>
+                            <button onclick="cancelReply()" style="background: transparent; color: #b9bbbe; border: none; font-size: 16px; cursor: pointer; margin-left: 10px;">✖</button>
+                        </div>
+                        
+                        <div id="file-staging-area" style="display: none; background: #1c1d24; padding: 15px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #131419; align-items: flex-start; gap: 15px;">
+                            <div style="position: relative; display: inline-block;">
+                                <img id="staged-file-img" style="display: none; max-width: 80px; max-height: 80px; border-radius: 4px; object-fit: cover;">
+                                <div id="staged-file-icon" style="display: none; width: 80px; height: 80px; background: #131419; border-radius: 4px; align-items: center; justify-content: center; font-size: 32px;">📄</div>
+                                <button onclick="clearStagedFile()" style="position: absolute; top: -8px; right: -8px; background: #ed4245; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5);" title="Datei entfernen" data-i18n-title="title_remove_file">✖</button>
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; height: 80px;">
+                                <span id="staged-file-name" style="font-weight: bold; font-size: 14px; color: white; word-break: break-all;">Dateiname.png</span>
+                                <span id="staged-file-size" style="font-size: 12px; color: #b9bbbe; margin-top: 4px;">0 KB</span>
+                            </div>
+                        </div>
+                        
+                        <div id="chat-input-wrapper" style="display: flex; gap: 10px; align-items: center; background: #40444b; padding: 5px 15px; border-radius: 8px; flex-wrap: wrap;">
+                            <input type="file" id="file-input" style="display: none;" accept="*/*">
+                            <button id="file-btn" style="background: transparent; font-size: 20px; padding: 0 5px; color: #b9bbbe;" title="Datei anhängen" data-i18n-title="title_attach_file">📎</button>
+                            <button id="record-btn" title="Gedrückt halten für Sprachnachricht" data-i18n-title="title_record_audio">🎙️</button>
+                            
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #b9bbbe; font-size: 12px; font-weight: bold;" title="Große Dateien (>15MB) verschlüsselt auf den Server laden?" data-i18n-title="title_encrypt_large_files">
+                                <input type="checkbox" id="encrypt-toggle" checked style="cursor: pointer; accent-color: #3ba55d;">
+                                <span data-i18n="label_e2ee">🔒 E2EE</span>
+                            </label>
+
+                            <textarea id="chat-input" autofocus rows="1" placeholder="Sichere Nachricht schreiben..." data-i18n-placeholder="placeholder_chat" style="background: transparent; flex: 1; font-size: 15px; min-width: 150px; color: white; border: none; resize: none; outline: none; padding: 5px 0; max-height: 150px; overflow-y: auto; font-family: inherit; line-height: 1.4;"></textarea>
+
+
+                        </div>
+                    </div>
+
+                </div>
+                
+                <div class="resizer-x" id="resizer-right" style="display: none;"></div>
+                
+                <div id="group-sidebar" style="width: 240px; flex-shrink: 0; background: #221e25; display: none; flex-direction: column; padding: 10px; overflow-y: auto; border-left: 1px solid #131419;">
+                    <h3 style="margin-bottom: 15px; padding-left: 5px; font-size: 11px;"><span data-i18n="label_members">MITGLIEDER — </span><span id="member-count">0</span></h3>
+                    <div id="group-member-sidebar-list"></div>
+                </div>
+            </div>
+
+
+        </div>
+
+
+
+
+        <div id="msg-context-menu" style="position: fixed; background: #290e30; padding: 8px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); min-width: 240px; border: 1px solid #4a154b; display: none; z-index: 3000; flex-direction: column; overflow: hidden; user-select: none;">
+        
+        <div id="ctx-edit" class="ctx-item" onclick="ctxEditMessage()">Nachricht bearbeiten <span>✏️</span></div>
+        <div id="ctx-reply" class="ctx-item" onclick="ctxReplyMessage()">Antworten <span>↩️</span></div>
+        <div id="ctx-forward" class="ctx-item" onclick="ctxForwardMessage()">Weiterleiten <span>↪️</span></div>
+        
+        <div class="ctx-divider"></div>
+        
+        <div class="ctx-item" onclick="ctxCopyText()">Text kopieren <span>📄</span></div>
+        <div class="ctx-item" onclick="ctxPinMessage()">Nachricht anpinnen <span>📌</span></div>
+        <div class="ctx-item" onclick="ctxMarkUnread()">Als ungelesen markieren <span>🔕</span></div>
+        <div class="ctx-item" onclick="ctxCopyLink()">Nachrichtenlink kopieren <span>🔗</span></div>
+        <div class="ctx-item" onclick="ctxReadAloud()">Nachricht vorlesen <span>🔊</span></div>
+        
+        <div class="ctx-divider" id="ctx-delete-divider"></div>
+        
+        <div id="ctx-delete" class="ctx-item danger" onclick="ctxDeleteMessage()">Nachricht löschen <span>🗑️</span></div>
+    </div>
+
+
+
+
+        <!--
+        <audio id="remote-audio" autoplay></audio>
+       
+        
+
+        <script src="./libs/peerjs.min.js"></script>
+        <script src="./libs/purify.min.js"></script>
+        
+
+
+        <script src="/libs/peerjs.min.js"></script>
+        <script src="/libs/purify.min.js"></script>
+
+
+        <script src="/libs/peerjs.min.js"></script>
+        <script src="/libs/purify.min.js"></script>
+
+         -->
+
+
+<script src="libs/peerjs.min.js"></script>
+<script src="libs/purify.min.js"></script>
+
+<script src="js/crypto.js"></script>
+<script src="js/webrtc.js"></script>
+<script src="js/ui.js"></script>
+
+        
+    </body>
+</html>

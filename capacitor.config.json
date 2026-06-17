@@ -1,0 +1,10 @@
+{
+  "appId": "com.vulalan.app",
+  "appName": "VulaLAN",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  }
+}
