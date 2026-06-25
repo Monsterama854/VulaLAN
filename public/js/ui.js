@@ -3175,19 +3175,28 @@ async function handleFileUpload(file, attachedText = "") {
     if (progMsg) progMsg.remove();
 
     if (isSuccess && downloadUrl) {
-      // FIX: Repariertes Datenpaket für große Dateien (> 15MB)
-      const bundleData = {
-        text: attachedText,
-        file: downloadUrl,
-        fileName: safeFileName,
-        fileSize: file.size,
-        fileKey: fileKeyB64,
-        groupId: isGroup ? targetIp : null,
-        replyData: window.currentReplyData,
-      };
+        // FIX: Repariertes Datenpaket für große Dateien (> 15MB)
+        const bundleData = {
+          text: attachedText,
+          file: downloadUrl,
+          fileName: safeFileName,
+          fileSize: file.size,
+          fileKey: fileKeyB64,
+          groupId: isGroup ? targetIp : null,
+          replyData: window.currentReplyData,
+        };
 
-      if (isGroup) {
-        const grp = groups.find((g) => g.id === targetIp);
+        if (targetIp === "grp_global") {
+          // NEU: An das Server-Archiv (Global Chat) funken!
+          sendSignal(null, {
+            type: "global-chat",
+            payload: bundleData,
+            fromIp: myIp,
+            timestamp: ts,
+            ...profile,
+          });
+        } else if (isGroup) {
+          const grp = groups.find((g) => g.id === targetIp);
         if (grp) {
           for (let mIp of grp.members) {
             if (mIp === myIp) continue;
@@ -3275,17 +3284,27 @@ async function handleFileUpload(file, attachedText = "") {
       const b64 = event.target.result;
 
       // FIX: Repariertes Datenpaket für kleine Dateien (Base64)
-      const bundleData = {
-        text: attachedText,
-        file: b64,
-        fileName: safeFileName,
-        fileSize: file.size,
-        groupId: isGroup ? targetIp : null,
-        replyData: window.currentReplyData,
-      };
+      // FIX: Repariertes Datenpaket für kleine Dateien (Base64)
+        const bundleData = {
+          text: attachedText,
+          file: b64,
+          fileName: safeFileName,
+          fileSize: file.size,
+          groupId: isGroup ? targetIp : null,
+          replyData: window.currentReplyData,
+        };
 
-      if (isGroup) {
-        const grp = groups.find((g) => g.id === targetIp);
+        if (targetIp === "grp_global") {
+          // NEU: An das Server-Archiv (Global Chat) funken!
+          sendSignal(null, {
+            type: "global-chat",
+            payload: bundleData,
+            fromIp: myIp,
+            timestamp: ts,
+            ...profile,
+          });
+        } else if (isGroup) {
+          const grp = groups.find((g) => g.id === targetIp);
         if (grp) {
           for (let mIp of grp.members) {
             if (mIp === myIp) continue;
@@ -3318,7 +3337,7 @@ async function handleFileUpload(file, attachedText = "") {
         });
       }
 
-      const statusText = "🚀 Datei gesendet & E2EE verschlüsselt!";
+      const statusText = "🚀 File sent & E2E encrypted!";
       let finalUiText = attachedText
         ? attachedText +
           `<br><br><span style="color:#3ba55d; font-size:11px;">${statusText}</span>`
